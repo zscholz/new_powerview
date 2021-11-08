@@ -1,6 +1,7 @@
 /**
  * Hunter Douglas PowerView Shade (device handler)
  * Copyright (c) 2017 Johnvey Hwang
+ * Modified 2021 Zach Scholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +29,8 @@ include 'asynchttp_v1'
 metadata {
     definition (
         name: "Hunter Douglas PowerView Shade", 
-        namespace: "johnvey", 
-        author: "Johnvey Hwang"
+        namespace: "zscholz", 
+        author: "Zach Scholz"
     ) {
         // tags
         capability "Actuator"
