@@ -1,558 +1,641 @@
 /**
- *  Hunter Douglas PowerView
+ * Hunter Douglas PowerView Hub SmartApp (service manager)
+ * Copyright (c) 2017 Johnvey Hwang
  *
- *  Copyright 2017 Chris Lang
- *  Updated 2021 Zach Scholz
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License. You may obtain a copy of the License at:
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
- *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
- *  for the specific language governing permissions and limitations under the License.
- *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-definition(
-    name: "Hunter Douglas PowerView",
-    namespace: "zscholz",
-    author: "Zach Scholz",
-    description: "Provides control of Hunter Douglas shades and scenes via the PowerView hub.",
-    category: "Convenience",
-    iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
-    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png",
-    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience@2x.png") {
-    
-    appSetting "devOpt"
-}
 
+definition(
+  name: "Hunter Douglas PowerView",
+  namespace: "johnvey",
+  author: "Johnvey Hwang",
+  description: "Controls shades and scenes managed by your PowerView hub",
+  category: "My Apps",
+  iconUrl: "https://silver-saint.netlify.com/assets/powerview-icon.png",
+  iconX2Url: "https://silver-saint.netlify.com/assets/powerview-icon-2x.png",
+  iconX3Url: "https://silver-saint.netlify.com/assets/powerview-icon-3x.png"
+)
 
 preferences {
-	section("Title") {
-		page(name: "mainPage")
-        page(name: "devicesPage")
-        page(name: "roomsPage")
-	}
+    page(name: "singlePagePref")
 }
 
-/*
- * Pages
- */
-def mainPage() {
-    def setupComplete = !!atomicState?.shades
-	def pageProperties = [
-    	name: "mainPage",
-        title: "",
-        install: setupComplete,
-        uninstall: atomicState?.installed
-    ]
-    
-	return dynamicPage(pageProperties) {
-        section("PowerView Hub") {
-            input("powerviewIPAddress", "text", title: "IP Address", defaultValue: "", description: "(ie. 192.168.1.10)", required: true, submitOnChange: true)
-        }
-        if (settings?.powerviewIPAddress) {
-        	section("Devices & Scenes") {
-                def description = (description != "") ? (description + "\nTap to modify") : "Tap to configure";
-                href "devicesPage", title: "Manage Devices", description: description, state: "complete"
-                atomicState?.loadingDevices = false
-			}
-        }
-    }
-}
-
-def devicesPage() {
-	def pageProperties = [
-    	name: "devicesPage",
-        title: "Manage Devices"
-    ]
-
-	// log.debug "atomicState?.loadingDevices = ${atomicState?.loadingDevices}"
-	if (!atomicState?.loadingDevices) {
-    	atomicState?.loadingDevices = true
-    	getDevices()
-	}
-    
-    // log.debug "atomicState?.deviceData = ${atomicState?.deviceData}"
-    if (!atomicState?.deviceData?.shades || !atomicState?.deviceData?.scenes || !atomicState?.deviceData?.rooms) {
-        pageProperties["refreshInterval"] = 1
-        return dynamicPage(pageProperties) {
-        	section("Discovering Devices...") {
-	            paragraph "Please wait..."
-            }
-        }
-	}
-    
-	return dynamicPage(pageProperties) {
-    	section("Rooms") {
-        	href "roomsPage", title: "Manage Rooms", description: "Tap to configure open/close scenes for each room", state: "complete"
-		}
-        section("Shades") {
-            input("syncShades", "bool", title: "Automatically sync all shades", required: false, defaultValue: true, submitOnChange: true)        	
-            if (settings?.syncShades == true || settings?.syncShades == null) {
-                def shadesDesc = atomicState?.deviceData?.shades.values().join(", ")
-                paragraph "The following shades will be added as devices: ${shadesDesc}"
-                atomicState?.shades = atomicState?.deviceData?.shades
-            } else {
-                input(name: "shades", title:"Shades", type: "enum", required: false, multiple: true, submitOnChange: true, metadata: [values:atomicState?.deviceData?.shades])
-                atomicState?.shades = getSelectedShades(settings?.shades)
-                log.debug "shades: ${settings?.shades}"
-            }
-        }
-        section("Scenes") {
-            input("syncScenes", "bool", title: "Automatically sync all scenes", required: false, defaultValue: true, submitOnChange: true)        	
-            if (settings?.syncScenes == true || settings?.syncScenes == null) {
-                def scenesDesc = atomicState?.deviceData?.scenes.values().join(", ")
-                paragraph "The following shades will be added as devices: ${scenesDesc}"
-                atomicState?.scenes = atomicState?.deviceData?.scenes
-            } else {
-                input(name: "scenes", title:"Scenes", type: "enum", required: false, multiple: true, submitOnChange: true, metadata: [values:atomicState?.deviceData?.scenes])
-                atomicState?.scenes = getSelectedScenes(settings?.scenes)
-            }
-        }
-    }
-}
-
-def roomsPage() {
-	def pageProperties = [
-    	name: "roomsPage",
-        title: "Manage Rooms"
-    ]
-
-	dynamicPage(pageProperties) {
-        section {
-        	paragraph("Configure scenes to open or close the blinds in each room. A virtual device will be created for each room so configured.")
-        }
-        def rooms = [:]
-        atomicState?.deviceData.rooms.collect{ id, name ->
-            section(name) {
-            	def openSetting = "room" + id + "Open";
-                def closeSetting = "room" + id + "Close"
-            	def description
-                if (settings[openSetting] && settings[closeSetting]) {
-                	description = "Blinds in this room will open and close via the configured scenes."
-				} else if (settings[openSetting]) {
-                	description = "Blinds in this room will open via the configured scene, but not close."
-				} else if (settings[closeSetting]) {
-                	description = "Blinds in this room will close via the configured scene, but not open."
-				} else {
-                	description = "No virtual device will be created for this room because neither open nor close scenes are configured."
+def singlePagePref() {
+    return dynamicPage(
+        name: "singlePagePref", 
+        install: canInstall(), 
+        uninstall: true, 
+        refreshInterval: getPrefInterval()
+    ) {
+        // setup basic connection to hub
+        section("Hub setup") {
+            input(
+                name: "hubIP", 
+                title: "IP Address", 
+                type: "text", 
+                required: false, 
+                submitOnChange: true
+            )
+            if (hubIP) {
+                if (state.hubMAC) {
+                    paragraph(title: "Hub name", "${state.hubName} (${state.hubMAC})")
+                } else {
+                    paragraph "Fetching hub info..."
                 }
-                paragraph(description)
-                
-                // TODO limit to scenes for this room or multi-room scenes
-                input(name: openSetting, title:"Open", type: "enum", required: false, multiple: false, submitOnChange: true, metadata: [values:atomicState?.deviceData?.scenes])
-                input(name: closeSetting, title:"Close", type: "enum", required: false, multiple: false, submitOnChange: true, metadata: [values:atomicState?.deviceData?.scenes])
-                
-                rooms[id] = [
-                	name: name,
-                	openScene: settings[openSetting],
-                    closeScene: settings[closeSetting],
-                ]
-			}
+            }
         }
-        atomicState?.rooms = rooms        
-//        log.debug "atomicState?.rooms = ${atomicState?.rooms}"
+
+        // manage hub details
+        if (hubIP) {
+            fetchHubInfo()
+            fetchAllShades()
+            fetchAllScenes()
+            fetchAllSceneCollections()
+            def foundShades = getDiscoveredShadeList()
+            def foundScenes = getDiscoveredSceneList()
+            def foundSceneCollections = getDiscoveredSceneCollectionList()
+            def shadeCount = foundShades.size()
+            def sceneCount = foundScenes.size()
+            def sceneCollectionCount = foundSceneCollections.size()
+            log.info("pref.singlePagePref - shadeCount=$shadeCount, sceneCount=$sceneCount, sceneCollectionCount=$sceneCollectionCount")
+
+            section("Shades") {
+                if (shadeCount > 0) {
+                    input(
+                        name: "selectedShades", 
+                        title: "Linked shades (${shadeCount} available)", 
+                        type: "enum", 
+                        options: foundShades, 
+                        multiple: true, 
+                        required: false
+                    )
+                } else {
+                    paragraph "Searching for installed shades..."
+                }
+            }
+
+            section("Scenes") {
+                if (sceneCount > 0) {
+                    input(
+                        name: "selectedScenes", 
+                        title: "Linked scenes (${sceneCount} available)", 
+                        type: "enum", 
+                        options: foundScenes,
+                        multiple: true, 
+                        required: false
+                    )
+                } else {
+                    paragraph "Searching for installed scenes..."
+                }
+            }
+
+            section("Scene Collections") {
+                if (sceneCollectionCount > 0) {
+                    input(
+                        name: "selectedSceneCollections", 
+                        title: "Linked scene collections (${sceneCollectionCount} available)", 
+                        type: "enum", 
+                        options: foundSceneCollections,
+                        multiple: true, 
+                        required: false
+                    )
+                } else {
+                    paragraph "Searching for installed scene collections..."
+                }
+            }
+		}
     }
 }
 
-/*
- * Service Manager lifecycle
+// show the "Done" action only when user has input an IP
+def canInstall() {
+    return state.hubIP ? true : false
+}
+
+// TODO: should this back off the refresh rate if we have an IP?
+def getPrefInterval() {
+    return 5
+    // state.hubIP ? 5 : 15
+}
+
+
+// ----------------------------------------------------------------------------
+// utility methods
+// ----------------------------------------------------------------------------
+
+// returns the currently active hub ID
+def getHubID() {
+    def hubID
+    if (myHub) {
+        hubID = myHub.id
+    } else {
+        def hubs = location.hubs.findAll { 
+            it.type == physicalgraph.device.HubType.PHYSICAL 
+        } 
+        if (hubs.size() == 1) hubID = hubs[0].id 
+    }
+    return hubID
+}
+
+/**
+ * Generates a device network ID based that is unique to the active PV hub
+ */
+def getDeviceId(deviceType, pvId) {
+    switch (deviceType) {
+        case 'shade':
+        case 'scene':
+        case 'scenecollection':
+            // valid
+            break
+        default:
+            log.error("got invalid deviceType: $deviceType")
+            return
+    }
+    return "$deviceType;${state.hubMAC};${pvId}"
+}
+
+/**
+ * Extracts the device type from the child device DNI, as defined above in
+ * getDeviceId().
+ */
+def parseDeviceType(deviceNetworkId) {
+    return deviceNetworkId.tokenize(';')[0]
+}
+
+
+// ----------------------------------------------------------------------------
+// discovery methods
+// ----------------------------------------------------------------------------
+
+/**
+ * Fetches PV hub information
+ * 
+ * Requires that the user input the `hubIP` value
+ */
+def fetchHubInfo() {
+    log.info("fetchHubInfo()")
+
+    def DEFAULT_HUB_PORT = 80
+
+    if (settings.hubIP) {
+        state.hubIP = settings.hubIP
+        state.hubPort = DEFAULT_HUB_PORT
+        sendRequest('GET', '/api/userdata', null, _fetchHubInfoCallback)
+    } else {
+        log.debug("no hubIP set, skipping fetch")
+    }
+}
+
+/**
+ * Handles base hub info response
+ */
+def _fetchHubInfoCallback(response) {
+    def userData = response.json.userData
+    state.hubName = new String(userData.hubName.decodeBase64())
+    state.hubMAC = userData.macAddress.replaceAll(":", "")
+    log.info("_fetchHubInfoCallback(status=${response.status}) hubName=${state.hubName} hubMAC=${state.hubMAC}")
+}
+
+/**
+ * Fetches all managed shade configs
+ */
+def fetchAllShades() {
+    return sendRequest('GET', '/api/shades', null, _fetchAllShadesCallback)
+}
+
+/**
+ * Handles response for shade configs
+ */
+def _fetchAllShadesCallback(response) {
+    state.discoveredShades = [:]
+
+    response.json.shadeData?.each {
+        // start with the config info from PV
+        def shadeConfig = it.clone()
+
+        // add our custom keys
+        def shadeLabel
+        try {
+          shadeLabel = new String(it.name.decodeBase64())
+        } catch (e) {
+          log.error "Error decoding shade ${it.id} with name ${it.name}"
+          log.error e
+          shadeLabel = "${it.id} ${it.name}"
+        }
+        def enumLabel = "${shadeLabel} (${it.id})"
+        shadeConfig.label = "Blind ${shadeLabel}" // plain english name
+        shadeConfig.enumLabel = enumLabel // awkward label for use with prefs
+        shadeConfig.deviceNetworkId = getDeviceId('shade', it.id)
+
+        state.discoveredShades[enumLabel] = shadeConfig
+    }
+	log.info "_fetchAllShadesCallback(status=${response.status}) scenes=${state.discoveredShades.keySet()}"
+    return state.discoveredShades
+}
+
+/**
+ * Returns a flat list of shade names that can be rendered by a list control
+ */
+def getDiscoveredShadeList() {
+    def ret = []
+    state.discoveredShades?.each { key, value ->
+        ret.add(value.enumLabel)
+    }
+    return ret
+}
+
+/**
+ * Returns the device ID associated with an enumLabel
+ */
+def shadeEnumToId(enumLabel) {
+    return state.discoveredShades[enumLabel]?.deviceNetworkId
+}
+
+/**
+ * Fetches all managed scene configs
+ */
+def fetchAllScenes() {
+    return sendRequest('GET', '/api/scenes', null, _fetchAllScenesCallback)
+}
+
+/**
+ * Handles response for scene configs
+ */
+def _fetchAllScenesCallback(response) {
+    state.discoveredScenes = [:]
+
+    response.json.sceneData?.each {
+        // start with the config info from PV
+        def sceneConfig = it.clone()
+
+        // add our custom keys
+        def sceneLabel
+        try {
+          sceneLabel = new String(it.name.decodeBase64())
+        } catch (e) {
+          log.error "Error decoding scene ${it.id} with name ${it.name}"
+          log.error e
+          sceneLabel = "${it.id} ${it.name}"
+        }
+
+        def enumLabel = "${sceneLabel} (${it.id})"
+        sceneConfig.label = "Blinds ${sceneLabel}" // plain english name
+        sceneConfig.enumLabel = enumLabel // awkward label for use with prefs
+        sceneConfig.deviceNetworkId = getDeviceId('scene', it.id)
+
+        state.discoveredScenes[enumLabel] = sceneConfig
+    }
+	log.info "_fetchAllScenesCallback(status=${response.status}) scenes=${state.discoveredScenes.keySet()}"
+    return state.discoveredScenes
+}
+
+/**
+ * Returns a flat list of scene names that can be rendered by a list control
+ */
+def getDiscoveredSceneList() {
+    def ret = []
+    state.discoveredScenes?.each { key, value ->
+        ret.add(value.enumLabel)
+    }
+    return ret
+}
+
+/**
+ * Returns the device ID associated with an enumLabel
+ */
+def sceneEnumToId(enumLabel) {
+    return state.discoveredScenes[enumLabel]?.deviceNetworkId
+}
+
+/**
+ * Fetches all managed scene configs
+ */
+def fetchAllSceneCollections() {
+    return sendRequest('GET', '/api/scenecollections', null, _fetchAllSceneCollectionsCallback)
+}
+
+/**
+ * Handles response for scene configs
+ */
+def _fetchAllSceneCollectionsCallback(response) {
+    state.discoveredSceneCollections = [:]
+
+    response.json.sceneCollectionData?.each {
+        // start with the config info from PV
+        def sceneCollectionConfig = it.clone()
+
+        // add our custom keys
+        def sceneCollectionLabel
+        try {
+          sceneCollectionLabel = new String(it.name.decodeBase64())
+        } catch (e) {
+          log.error "Error decoding scene collection ${it.id} with name ${it.name}"
+          log.error e
+          sceneCollectionLabel = "${it.id} ${it.name}"
+        }
+
+        def enumLabel = "${sceneCollectionLabel} (${it.id})"
+        sceneCollectionConfig.label = "Blinds ${sceneCollectionLabel}" // plain english name
+        sceneCollectionConfig.enumLabel = enumLabel // awkward label for use with prefs
+        sceneCollectionConfig.deviceNetworkId = getDeviceId('scenecollection', it.id)
+
+        state.discoveredSceneCollections[enumLabel] = sceneCollectionConfig
+    }
+	log.info "_fetchAllSceneCollectionsCallback(status=${response.status}) scenes=${state.discoveredSceneCollections.keySet()}"
+    return state.discoveredSceneCollections
+}
+
+/**
+ * Returns a flat list of scene names that can be rendered by a list control
+ */
+def getDiscoveredSceneCollectionList() {
+    def ret = []
+    state.discoveredSceneCollections?.each { key, value ->
+        ret.add(value.enumLabel)
+    }
+    return ret
+}
+
+/**
+ * Returns the device ID associated with an enumLabel
+ */
+def sceneCollectionEnumToId(enumLabel) {
+    return state.discoveredSceneCollections[enumLabel]?.deviceNetworkId
+}
+
+// ----------------------------------------------------------------------------
+// device handler methods
+// ----------------------------------------------------------------------------
+
+/**
+ * Install the shades that the user selected in the config
+ */
+def installSelectedShades() {
+    log.info("installSelectedShades() selectedShades=${settings.selectedShades}")
+
+    // remove the shades that are installed but are not checked by the user
+    def toRemove = getDiscoveredShadeList() - settings.selectedShades
+    toRemove?.each {
+        def deviceId = shadeEnumToId(it)
+        log.info("Remove shade deviceId=$deviceId")
+        try {
+            deleteChildDevice(deviceId)
+        } catch (e) {
+            log.warn(e)
+        }
+    }
+    // state.addedShadeIds = []
+
+    // iterate over the enum label
+    settings.selectedShades?.each {
+        installShade(it)
+    }
+}
+
+/**
+ * Installs an individual shade device handler
+ */
+def installShade(enumLabel) {
+    // get shade info already fetched
+    def shadeInfo = state.discoveredShades.get(enumLabel)
+    if (!shadeInfo) {
+        log.error("installShade failed; did not find $enumLabel in state.discoveredShades")
+        return
+    }
+
+    // check if device is already installed
+    def currentChildDevices = getChildDevices()
+    def selectedDevice = currentChildDevices.find { shadeInfo.deviceNetworkId }
+    def dev
+    if (selectedDevice) {
+        dev = getChildDevices()?.find {
+            it.deviceNetworkId == shadeInfo.deviceNetworkId
+        }
+    }
+
+    if (!dev) {
+        def addedDevice = addChildDevice(
+            "johnvey", 
+            "Hunter Douglas PowerView Shade", 
+            shadeInfo.deviceNetworkId,
+            getHubID(),
+            [name: shadeInfo.id, label: shadeInfo.label, completedSetup: true]
+        )
+        log.info "ADDED: label=${shadeInfo.label} deviceId=${shadeInfo.deviceNetworkId}"
+    } else {
+        log.info("SKIP: deviceId=${shadeInfo.deviceNetworkId}")
+    }
+}
+
+/**
+ * Install the scenes that the user selected in the config
+ */
+def installSelectedScenes() {
+    log.info("installSelectedScenes() selectedScenes=${settings.selectedScenes}")
+
+    // remove the scenes that are installed but are not checked by the user
+    def toRemove = getDiscoveredSceneList() - settings.selectedScenes
+    toRemove?.each {
+        def deviceId = sceneEnumToId(it)
+        log.info("Remove scene deviceId=$deviceId")
+        try {
+            deleteChildDevice(deviceId)
+        } catch (e) {
+            log.warn(e)
+        }
+    }
+
+    // iterate over the enum label
+    settings.selectedScenes?.each {
+        installScene(it)
+    }
+}
+
+/**
+ * Installs an individual scene device handler
+ */
+def installScene(enumLabel) {
+    // get scene info already fetched
+    def sceneInfo = state.discoveredScenes.get(enumLabel)
+    if (!sceneInfo) {
+        log.error("installScene failed; did not find $enumLabel in state.discoveredScenes")
+        return
+    }
+
+    // check if device is already installed
+    def currentChildDevices = getChildDevices()
+    log.debug("current child devices: ${currentChildDevices}")
+    def selectedDevice = currentChildDevices.find { sceneInfo.deviceNetworkId }
+    def dev
+    if (selectedDevice) {
+        dev = getChildDevices()?.find {
+            it.deviceNetworkId == sceneInfo.deviceNetworkId
+        }
+    }
+
+    if (!dev) {
+        def addedDevice = addChildDevice(
+            "johnvey", 
+            "Hunter Douglas PowerView Scene", 
+            sceneInfo.deviceNetworkId,
+            getHubID(),
+            [name: sceneInfo.id, label: sceneInfo.label, completedSetup: true]
+        )
+        // log the ID to the app for later use
+        state.addedSceneIds = state.addedSceneIds ?: []
+        state.addedSceneIds.add(sceneInfo.deviceNetworkId)
+        log.info "ADDED: label=${sceneInfo.label} deviceId=${sceneInfo.deviceNetworkId}"
+    } else {
+        log.debug("SKIP: deviceId=${sceneInfo.deviceNetworkId}")
+    }
+}
+
+def removeAddedScenes() {
+    state.addedSceneIds?.each {
+        log.info("Remove scene deviceId=$it")
+        deleteChildDevice(it)
+    }
+    state.addedSceneIds = []
+}
+
+/**
+ * Install the scene collections that the user selected in the config
+ */
+def installSelectedSceneCollections() {
+    log.info("installSelectedSceneCollections() selectedSceneCollections=${settings.selectedSceneCollections}")
+
+    // remove the scene collections that are installed but are not checked by the user
+    def toRemove = getDiscoveredSceneCollectionList() - settings.selectedSceneCollections
+    toRemove?.each {
+        def deviceId = sceneCollectionEnumToId(it)
+        log.info("Remove scene collection deviceId=$deviceId")
+        try {
+            deleteChildDevice(deviceId)
+        } catch (e) {
+            log.warn(e)
+        }
+    }
+
+    // iterate over the enum label
+    settings.selectedSceneCollections?.each {
+        installSceneCollection(it)
+    }
+}
+
+/**
+ * Installs an individual scene collection device handler
+ */
+def installSceneCollection(enumLabel) {
+    // get scene info already fetched
+    def sceneCollectionInfo = state.discoveredSceneCollections.get(enumLabel)
+    if (!sceneCollectionInfo) {
+        log.error("installSceneCollection failed; did not find $enumLabel in state.discoveredSceneCollections")
+        return
+    }
+
+    // check if device is already installed
+    def currentChildDevices = getChildDevices()
+    log.debug("current child devices: ${currentChildDevices}")
+    def selectedDevice = currentChildDevices.find { sceneCollectionInfo.deviceNetworkId }
+    def dev
+    if (selectedDevice) {
+        dev = getChildDevices()?.find {
+            it.deviceNetworkId == sceneCollectionInfo.deviceNetworkId
+        }
+    }
+
+    if (!dev) {
+        def addedDevice = addChildDevice(
+            "johnvey", 
+            "Hunter Douglas PowerView Scene Collection", 
+            sceneCollectionInfo.deviceNetworkId,
+            getHubID(),
+            [name: sceneCollectionInfo.id, label: sceneCollectionInfo.label, completedSetup: true]
+        )
+        // log the ID to the app for later use
+        state.addedSceneCollectionIds = state.addedSceneCollectionIds ?: []
+        state.addedSceneCollectionIds.add(sceneCollectionInfo.deviceNetworkId)
+        log.info "ADDED: label=${sceneCollectionInfo.label} deviceId=${sceneCollectionInfo.deviceNetworkId}"
+    } else {
+        log.debug("SKIP: deviceId=${sceneCollectionInfo.deviceNetworkId}")
+    }
+}
+
+def removeAddedSceneCollections() {
+    state.addedSceneCollectionIds?.each {
+        log.info("Remove scene collection deviceId=$it")
+        deleteChildDevice(it)
+    }
+    state.addedSceneCollectionIds = []
+}
+
+// ----------------------------------------------------------------------------
+// HTTP methods
+// ----------------------------------------------------------------------------
+
+private sendRequest(method, path, body='', callbackFn) {
+
+    def host = state.hubIP
+    def port = state.hubPort
+
+    def hubAction = new physicalgraph.device.HubAction(
+        [
+            method: method,
+            path: path,
+            HOST: "$host:$port",
+            headers: [
+                'HOST': "$host:$port",
+                'Content-Type': 'application/json'
+            ],
+            body: body
+        ],
+        null,
+        [ callback: callbackFn ]
+    )
+    log.debug("sendRequest: $method $host:$port$path")
+    sendHubCommand(hubAction)
+}
+
+
+// ----------------------------------------------------------------------------
+// app lifecycle hooks
+// ----------------------------------------------------------------------------
+
+/**
+ * called when SmartApp is first added; is a no-op here becuase we handle
+ * everything via updated()
  */
 def installed() {
-	log.debug "Installed with settings: ${settings}"
-
-	initialize()
+    log.info "CMD installed"
 }
 
+/**
+ * called when SmartApp pref pane clicked 'done'
+ */
 def updated() {
-	log.debug "Updated with settings: ${settings}"
-
-	initialize()
+    log.info "CMD updated"
+    installSelectedShades()
+    installSelectedScenes()
+    installSelectedSceneCollections()
 }
 
-def initialize() {
-	atomicState?.installed = true
-    unsubscribe()
-    addRemoveDevices()
-    
-    unschedule()
-    pollShades()
-    runEvery5Minutes("pollShades")
-}
-
-def addRemoveDevices() {
-	log.debug "addRemoveDevices"
-	def devicesInUse = []
-    if (atomicState?.rooms) {
-    	atomicState?.rooms?.collect{ id, room ->
-        	log.debug "checking room ${id}"
-        	if (room.openScene || room.closeScene) {
-                def dni = roomIdToDni(id)
-                def child = getChildDevice(dni)
-                if (!child) {
-                    child = addChildDevice("clang13", "Hunter Douglas PowerView Room", dni, null, [label: getRoomLabel(room.name)])
-                    log.debug "Created child '${child}' with dni ${dni}"
-                }
-                devicesInUse += dni
-            }
-        }
-    }
-    if (atomicState?.shades) {
-    	atomicState?.shades?.collect{ id, name ->
-        	def dni = shadeIdToDni(id)
-            def child = getChildDevice(dni)
-            if (!child) {
-            	child = addChildDevice("clang13", "Hunter Douglas PowerView Shade", dni, null, [label: name])
-                log.debug "Created child '${child}' with dni ${dni}"
-			}
-            devicesInUse += dni
-        }
-    }
-    if (atomicState?.scenes) {
-    	atomicState?.scenes?.collect{ id, name ->
-        	def dni = sceneIdToDni(id)
-            def child = getChildDevice(dni)
-            if (!child) {
-            	child = addChildDevice("clang13", "Hunter Douglas PowerView Scene", dni, null, [label: name])
-                log.debug "Created child '${child}' with dni ${dni}"
-			}
-            devicesInUse += dni
-        }
-	}
-    
-    log.debug "devicesInUse = ${devicesInUse}"
-    def devicesToDelete = getChildDevices().findAll { !devicesInUse?.toString()?.contains(it?.deviceNetworkId) }
-    if (devicesToDelete?.size() > 0) {
-        devicesToDelete.each { 
-	    	log.debug "Deleting device ${it.deviceNetworkId}"
-        	deleteChildDevice(it.deviceNetworkId) 
-        }
-    }    
-}
-
-def pollShades() {
-    def now = now()
-    def updateBattery = false
-
-	// Update battery status no more than once an hour
-    if (!atomicState?.lastBatteryUpdate || (atomicState?.lastBatteryUpdate - now) > (60 * 60 * 1000)) {
-    	updateBattery = true
-        atomicState?.lastBatteryUpdate = now
-	}
-    
-    log.debug "pollShades: updateBattery = ${updateBattery}"
-    
-    getShadeDevices().eachWithIndex{ device,index -> 
-    	if (device != null) {
-	        def shadeId = dniToShadeId(device.deviceNetworkId)
-	    	runIn(index * 5, "pollShadeDelayed", [overwrite: false, data: [shadeId: shadeId, updateBattery: updateBattery]])
-        } else {
-        	log.debug "Got null shade device, index ${index}"
-        }
-    }
-}
-
-def pollShadeDelayed(data) {
-//	log.debug "pollShadeDelayed: data: ${data}"
-	pollShadeId(data.shadeId, data.updateBattery);
-}
-
-/*
- * Device management
+/**
+ * Called when SmartApp is removed
  */
-def getDevices() {
-	getRooms()
-	getShades()
-    getScenes()
-}
-
-def getRoomLabel(roomName) {
-	return "${roomName} Blinds"
-}
-
-def getRoomDniPrefix() {
-	return "PowerView-Room-";
-}
-
-def getSceneDniPrefix() {
-	return "PowerView-Scene-";
-}
-
-def getShadeDniPrefix() {
-	return "PowerView-Shade-";
-}
-
-def roomIdToDni(id) {
-	return "${getRoomDniPrefix()}${id}";
-}
-
-def dniToRoomId(dni) {
-	def prefix = getRoomDniPrefix()
-	return dni.startsWith(prefix) ? dni.replace(prefix, "") : null
-}
-
-def sceneIdToDni(id) {
-	return "${getSceneDniPrefix()}${id}";
-}
-
-def dniToSceneId(dni) {
-	def prefix = getSceneDniPrefix()
-	return dni.startsWith(prefix) ? dni.replace(prefix, "") : null
-}
-
-def shadeIdToDni(id) {
-	return "${getShadeDniPrefix()}${id}";
-}
-
-def dniToShadeId(dni) {
-	def prefix = getShadeDniPrefix()
-	return dni.startsWith(prefix) ? dni.replace(prefix, "") : null
-}
-
-def getSceneDevices() {
-	return atomicState?.scenes?.keySet().collect{ 
-    	getChildDevice(sceneIdToDni(it)) 
+def uninstalled() {
+    log.info "CMD uninstalled"
+    getChildDevices().each {
+        deleteChildDevice(it.deviceNetworkId)
     }
-}
-
-def getShadeDevice(shadeId) {
-	return getChildDevice(shadeIdToDni(shadeId))
-}
-
-def getShadeDevices() {
-	return atomicState?.shades?.keySet().collect{ 
-    	getChildDevice(shadeIdToDni(it)) 
-    }
-}
-
-// data can contain 'shades', 'scenes', and/or 'rooms' -- only deviceData for specified device types is updated
-def updateDeviceDataState(data) {
-    def deviceData = atomicState?.deviceData ?: [:]
-
-	if (data?.rooms) {
-    	deviceData["rooms"] = data?.rooms
-    }
-    if (data?.scenes) {
-	    deviceData["scenes"] = data?.scenes
-    }
-    if (data?.shades) {
-	    deviceData["shades"] = data?.shades
-    }
-    
-    atomicState?.deviceData = deviceData
-//    log.debug "updateDeviceData: atomicState.deviceData: ${atomicState?.deviceData}"
-}
-
-def getSelectedShades(Collection selectedShadeIDs) {
-	return getSelectedDevices(atomicState?.deviceData?.shades, selectedShadeIDs)
-}
-
-def getSelectedScenes(Collection selectedSceneIDs) {
-	return getSelectedDevices(atomicState?.deviceData?.scenes, selectedSceneIDs)
-}
-
-def getSelectedDevices(Map devices, Collection selectedDeviceIDs) {
-	if (!selectedDeviceIDs) {
-    	return [:]
-    }
-	return devices?.findAll{ selectedDeviceIDs.contains(it.key) }
-}
-
-/*
- * PowerView API
- */
-
-// ROOMS
-
-def getRooms() {
-	callPowerView("rooms", roomsCallback)
-}
-
-def openRoom(roomDevice) {
-	log.debug "openRoom: roomDevice = ${roomDevice}"
-    
-	def roomId = dniToRoomId(roomDevice.deviceNetworkId)
-    def sceneId = atomicState?.rooms[roomId]?.openScene
-    if (sceneId) {
-    	triggerScene(sceneId)
-	} else {
-    	log.debug "no open scene configured for room ${roomId}"
-	}
-}
-
-def closeRoom(roomDevice) {
-	log.debug "closeRoom: roomDevice = ${roomDevice}"
-    
-	def roomId = dniToRoomId(roomDevice.deviceNetworkId)
-    def sceneId = atomicState?.rooms[roomId]?.closeScene
-    if (sceneId) {
-    	triggerScene(sceneId)
-	} else {
-    	log.debug "no close scene configured for room ${roomId}"
-	}
-}
-
-void roomsCallback(physicalgraph.device.HubResponse hubResponse) {
-    log.debug "Entered roomsCallback()... hubResponse: ${hubResponse}"
-    log.debug "json: ${hubResponse.json}"
-    
-    def rooms = [:]
-	hubResponse.json.roomData.each{ room ->
-    	def name = new String(room.name.decodeBase64())
-        rooms[room.id] = name
-    	log.debug "room: ID = ${room.id}, name = ${name}"
-    }
-    
-    updateDeviceDataState([rooms: rooms])
-}
-
-// SCENES
-
-def getScenes() {
-	callPowerView("scenes", scenesCallback)
-}
-
-def triggerSceneFromDevice(sceneDevice) {
-	def sceneId = dniToSceneId(sceneDevice.deviceNetworkId)
-    triggerScene(sceneId)
-}
-
-def triggerScene(sceneId) {
-	callPowerView("scenes", null, [sceneid: sceneId])
-}
-
-void scenesCallback(physicalgraph.device.HubResponse hubResponse) {
-    log.debug "Entered scenesCallback()... hubResponse: ${hubResponse}"
-    log.debug "json: ${hubResponse.json}"
-    
-    def scenes = [:]
-	hubResponse.json.sceneData.each{ scene ->
-    	def name = new String(scene.name.decodeBase64())
-        scenes[scene.id] = name
-    	log.debug "scene: ID = ${scene.id}, name = ${name}"
-    }
-    
-    updateDeviceDataState([scenes: scenes])
-}
-
-// SHADES 
-
-def getShades() {
-	callPowerView("shades", shadesCallback)
-}
-
-def pollShade(shadeDevice, updateBatteryStatus = false) {
-	log.debug "pollShade: shadeDevice = ${shadeDevice}"
-	def shadeId = dniToShadeId(shadeDevice.deviceNetworkId)
-    pollShadeId(shadeId)
-}
-
-def pollShadeId(shadeId, updateBatteryStatus = false) {
-//	log.debug "pollShadeId: shadeId = ${shadeId}"
-    def query = [refresh: "true"]
-    if (updateBatteryStatus) {
-    	query["s"] = "true"
-    }
-    callPowerView("shades/${shadeId}", shadePollCallback, query)
-}
-
-def calibrateShade(shadeDevice) {
-	log.debug "calibrateShade: shadeDevice = ${shadeDevice}"
-    moveShade(shadeDevice, [motion:"calibrate"])
-}
-
-def jogShade(shadeDevice) {
-	log.debug "jogShade: shadeDevice = ${shadeDevice}"
-    moveShade(shadeDevice, [motion:"jog"])
-}
-
-def setPosition(shadeDevice, positions) {
-	log.debug "setPosition: shadeDevice = ${shadeDevice}"
-    
-    def shadePositions = [:]
-    def positionNumber = 1
-    if (positions?.containsKey("bottomPosition")) {
-    	shadePositions["position${positionNumber}"] = (int) (positions.bottomPosition * 65535 / 100)
-        shadePositions["posKind${positionNumber}"] = 1
-        positionNumber += 1
-	}
-    if (positions?.containsKey("topPosition")) {
-    	shadePositions["position${positionNumber}"] = (int) (positions.bottomPosition * 65535 / 100)
-        shadePositions["posKind${positionNumber}"] = 2
-	}
-    
-    moveShade(shadeDevice, [positions:shadePositions])
-}
-
-def moveShade(shadeDevice, movementInfo) {
-	def shadeId = dniToShadeId(shadeDevice.deviceNetworkId)
-    
-    def body = [:]
-    body["shade"] = movementInfo
-    body.shade["id"] = shadeId
-
-	def json = new groovy.json.JsonBuilder(body)
-    callPowerView("shades/${shadeId}", setPositionCallback, null, "PUT", json.toString())
-}
-
-void shadePollCallback(physicalgraph.device.HubResponse hubResponse) {
-	def shade = hubResponse.json.shade
-    def childDevice = getShadeDevice(shade.id)
-    
-    log.debug "poll callback for shade id ${shade.id}, calling device ${childDevice}"
-    childDevice.handleEvent(shade)
-}
-
-void setPositionCallback(physicalgraph.device.HubResponse hubResponse) {
-//    log.debug "Entered setPositionCallback()... hubResponse: ${hubResponse}"
-//    log.debug "json: ${hubResponse.json}"
-
-	def shade = hubResponse.json.shade
-    def childDevice = getShadeDevice(shade.id)
-    
-    log.debug "setPositionCallback for shadeId ${shade.id}, calling device ${childDevice}"
-    childDevice.handleEvent(shade)
-}
-
-void shadesCallback(physicalgraph.device.HubResponse hubResponse) {
-    log.debug "Entered shadesCallback()... hubResponse: ${hubResponse}"
-    log.debug "json: ${hubResponse.json}"
-    
-    def shades = [:]
-	hubResponse.json.shadeData.each{ shade ->
-    	def name = shade.name ? new String(shade.name.decodeBase64()) : "Shade ID ${shade.id}"
-        shades[shade.id] = name
-    	log.debug "shade: ID = ${shade.id}, name = ${name}"
-    }
-    
-    updateDeviceDataState([shades: shades])
-}
-
-// CORE API
-
-def callPowerView(String path, callback, Map query = null, String method = "GET", String body = null) {    
-	def host = "${settings?.powerviewIPAddress}:80"
-    def fullPath = "/api/${path}"
-    
-    log.debug "callPowerView: url = 'http://${host}${fullPath}', method = '${method}', body = '${body}', query = ${query}"
-    
-    def headers = [
-    	"HOST" : host,
-    ]
-    
-    def hubAction = new physicalgraph.device.HubAction(
-        method: method,
-        path: fullPath,
-        headers: headers,
-        query: query,
-        body: body,
-        null,
-        [callback: callback]
-    )
-    
-//    log.debug "Sending HubAction: ${hubAction}"
-    
-    sendHubCommand(hubAction)
 }
