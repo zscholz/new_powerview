@@ -1,7 +1,6 @@
 /**
- * Hunter Douglas PowerView Scene Collection (device handler)
+ * Hunter Douglas PowerView Scene (device handler)
  * Copyright (c) 2017 Johnvey Hwang
- * Updated 2021 Zach Scholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +23,9 @@
 
 metadata {
     definition (
-        name: "Hunter Douglas PowerView Scene Collection", 
-        namespace: "zscholz", 
-        author: "Zach Scholz"
+        name: "Hunter Douglas PowerView Scene", 
+        namespace: "johnvey", 
+        author: "Johnvey Hwang"
     ) {
         // tags
         capability "Actuator"
@@ -56,7 +55,7 @@ metadata {
  * the `getDeviceId()` method in powerview-manager.groovy
  */
 private getDeviceId(pvId) {
-    return "scenecollection;${state.hubMAC};${pvId}"
+    return "scene;${state.hubMAC};${pvId}"
 }
 
 private sendRequest(method, path, body=null) {
@@ -85,6 +84,8 @@ def sendRequestCallback(response) {
     if (response.status != 200) {
         log.warn("got unexpected response: status=${response.status} body=${response.body}")
     }
+    // scenes can only be momentary actuator, so always reset ST state to off
+    sendEvent(name: 'switch', value: 'off')
 }
 
 
@@ -96,8 +97,8 @@ def setHubInfo() {
     state.hubMAC = parent.state.hubMAC
     state.hubIP = parent.state.hubIP
     state.hubPort = parent.state.hubPort
-    state.pvSceneCollectionId = device.name
-    log.debug("called setHubInfo() - hubMAC=${state.hubMAC} hubIP=${state.hubIP} hubPort=${state.hubPort} pvSceneId=${state.pvSceneCollectionId}")
+    state.pvSceneId = device.name
+    log.debug("called setHubInfo() - hubMAC=${state.hubMAC} hubIP=${state.hubIP} hubPort=${state.hubPort} pvSceneId=${state.pvSceneId}")
 }
 
 // parse hub response into attributes
@@ -118,7 +119,7 @@ def updated() {
 // implement the momentary method
 def push() {
     log.debug("CMD push()")
-    sendRequest("GET", "/api/scenecollections?sceneCollectionId=${state.pvSceneCollectionId}")
+    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
 }
 
 def on() {
