@@ -1,6 +1,7 @@
 /**
  * Hunter Douglas PowerView Hub SmartApp (service manager)
  * Copyright (c) 2017 Johnvey Hwang
+ * Modified 2021 Zach Scholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,8 +19,8 @@
 
 definition(
   name: "Hunter Douglas PowerView",
-  namespace: "johnvey",
-  author: "Johnvey Hwang",
+  namespace: "zscholz",
+  author: "Zach Scholz",
   description: "Controls shades and scenes managed by your PowerView hub",
   category: "My Apps",
   iconUrl: "https://silver-saint.netlify.com/assets/powerview-icon.png",
