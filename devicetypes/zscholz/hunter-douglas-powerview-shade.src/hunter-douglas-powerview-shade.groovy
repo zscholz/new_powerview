@@ -139,13 +139,13 @@ metadata {
 // set shade closed {"shade":{"id":1694,"positions":{"position1":0,"posKind1":1}}}
 @Field def ShadeComponentType = [
     SHADE: 1, 
-    VANE: 3
+    DUO: 2
 ]
 
 // define max (open) setting value
 @Field def ShadeMaxPosition = [
     SHADE: 65535,
-    VANE: 32767
+    DUO: 65535
 ]
 
 /**
@@ -170,8 +170,8 @@ private setPosition(int level, int type) {
     def rawPosition = 0
     if (type == ShadeComponentType.SHADE) {
         rawPosition = level/100 * ShadeMaxPosition.SHADE
-    } else if (type == ShadeComponentType.VANE) {
-        rawPosition = level/100 * ShadeMaxPosition.VANE
+    } else if (type == ShadeComponentType.DUO) {
+        rawPosition = level/100 * ShadeMaxPosition.DUO
     }
     rawPosition = (int) rawPosition // round value
     def rawType = type
@@ -304,21 +304,17 @@ def parseShadeData(payload) {
         // if shade level is reported, then vane is closed
         sendEvent(name: 'windowShade', value: 'closed')
 
-    } else if (shade.positions.posKind1 == ShadeComponentType.VANE) {
-        def vaneLevel = (int) shade.positions.position1 / ShadeMaxPosition.VANE * 100
-        log.debug("Setting vane level: ${vaneLevel}")
-        def stateName = ''
-        if (vaneLevel >= 99) {
-            stateName = 'open'
-        } else if (vaneLevel > 1) {
-            stateName = 'partial_vane'
+    } else if (shade.positions.posKind1 == ShadeComponentType.DUO) {
+        def duoLevel = (int) shade.positions.position1 / ShadeMaxPosition.DUO * 100
+        log.debug("Setting shade level: ${shadeLevel}")
+        sendEvent(name: 'level', value: shadeLevel)
+        if (shadeLevel > 0) {
+            sendEvent(name: 'switch', value: 'on')
         } else {
-            stateName = 'closed'
+            sendEvent(name: 'switch', value: 'off')            
         }
-        sendEvent(name: 'windowShade', value: stateName)
-        sendEvent(name: 'switch', value: 'off')
-        // if vane level is reported, then shade is closed
-        sendEvent(name: 'level', value: 0)
+        // if shade level is reported, then vane is closed
+        sendEvent(name: 'windowShade', value: 'closed')
     }
 
     // parse shade battery level info
@@ -409,9 +405,32 @@ def setLevel(level, rate=0) {
     log.debug "Executing 'setLevel'"
     return setPosition(Math.round(level), ShadeComponentType.SHADE)
 }
+/**
+ * Fully opens the shade... copied three logs and made for DUO
+ */
+def on() {
+    log.debug "Executing 'on'"
+    return setPosition(100, ShadeComponentType.DUO)
+}
 
+/**
+ * Fully closes the shade, vanes closed
+ */
+def off() {
+    log.debug "Executing 'off'"
+    return setPosition(0, ShadeComponentType.DUO)
+}
+
+/**
+ * Opens the shade to relative position to open
+ * @param level The desired shade level. 0=closed, 99=open
+ */
+def setLevel(level, rate=0) {
+    log.debug "Executing 'setLevel'"
+    return setPosition(Math.round(level), ShadeComponentType.DUO)
+}
 //
-// windowShade commands
+// windowShade commands... vanes don't matter but I kept them 
 //
 
 /**
