@@ -1,6 +1,7 @@
 /**
  * Hunter Douglas PowerView Scene Collection (device handler)
  * Copyright (c) 2017 Johnvey Hwang
+ * Updated 2021 Zach Scholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +25,8 @@
 metadata {
     definition (
         name: "Hunter Douglas PowerView Scene Collection", 
-        namespace: "johnvey", 
-        author: "Johnvey Hwang"
+        namespace: "zscholz", 
+        author: "Zach Scholz"
     ) {
         // tags
         capability "Actuator"
