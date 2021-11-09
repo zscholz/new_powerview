@@ -403,6 +403,7 @@ def off() {
     } else if (type == ShadeComponentType.DUO) {
         return setPosition(0, ShadeComponentType.DUO)
     }
+    log.debug "made it"
 }
 
 /**
