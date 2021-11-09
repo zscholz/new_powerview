@@ -427,7 +427,7 @@ def installShade(enumLabel) {
 
     if (!dev) {
         def addedDevice = addChildDevice(
-            "johnvey", 
+            "zscholz", 
             "Hunter Douglas PowerView Shade", 
             shadeInfo.deviceNetworkId,
             getHubID(),
@@ -487,7 +487,7 @@ def installScene(enumLabel) {
 
     if (!dev) {
         def addedDevice = addChildDevice(
-            "johnvey", 
+            "zscholz", 
             "Hunter Douglas PowerView Scene", 
             sceneInfo.deviceNetworkId,
             getHubID(),
@@ -558,7 +558,7 @@ def installSceneCollection(enumLabel) {
 
     if (!dev) {
         def addedDevice = addChildDevice(
-            "johnvey", 
+            "zscholz", 
             "Hunter Douglas PowerView Scene Collection", 
             sceneCollectionInfo.deviceNetworkId,
             getHubID(),
