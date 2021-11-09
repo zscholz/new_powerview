@@ -433,34 +433,6 @@ def setLevel(level, rate=0) {
 // windowShade commands... vanes don't matter but I kept them 
 //
 
-/**
- * Full opens the vanes. If the shade level position is > 0, the shade will
- * first close before opening the vanes.
- */
-def open() {
-    log.debug "Executing 'open'"
-    return setPosition(100, ShadeComponentType.VANE)
-}
-
-/**
- * Closes the vanes. If the shade level position is > 0, the shade will
- * close. (vanes are already closed)
- */
-def close() {
-    log.debug "Executing 'close'"
-    return setPosition(0, ShadeComponentType.VANE)
-}
-
-/**
- * Sets the vanes to the halfway point. If the shade level position is > 0, the shade will
- * first close.
- * TODO: this is hard-coded to 50%. It should really be a preference setting.
- */
-def presetPosition() {
-    log.debug "Executing 'presetPosition'"
-    return setPosition(50, ShadeComponentType.VANE)
-}
-
 def jog() {
     log.debug "Executing jog()"
     return startJog()
