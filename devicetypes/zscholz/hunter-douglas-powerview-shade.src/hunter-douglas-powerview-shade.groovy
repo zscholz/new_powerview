@@ -386,7 +386,11 @@ def refresh() {
  */
 def on() {
     log.debug "Executing 'on'"
-    return setPosition(100, ShadeComponentType.SHADE)
+        if (type == ShadeComponentType.SHADE) {
+        return setPosition(100, ShadeComponentType.SHADE)
+    } else if (type == ShadeComponentType.DUO) {
+        return setPosition(100, ShadeComponentType.DUO)
+    }
 }
 
 /**
@@ -394,7 +398,11 @@ def on() {
  */
 def off() {
     log.debug "Executing 'off'"
-    return setPosition(0, ShadeComponentType.SHADE)
+        if (type == ShadeComponentType.SHADE) {
+        return setPosition(0, ShadeComponentType.SHADE)
+    } else if (type == ShadeComponentType.DUO) {
+        return setPosition(0, ShadeComponentType.DUO)
+    }
 }
 
 /**
@@ -403,31 +411,11 @@ def off() {
  */
 def setLevel(level, rate=0) {
     log.debug "Executing 'setLevel'"
-    return setPosition(Math.round(level), ShadeComponentType.SHADE)
-}
-/**
- * Fully opens the shade... copied three logs and made for DUO
- */
-def on() {
-    log.debug "Executing 'on'"
-    return setPosition(100, ShadeComponentType.DUO)
-}
-
-/**
- * Fully closes the shade, vanes closed
- */
-def off() {
-    log.debug "Executing 'off'"
-    return setPosition(0, ShadeComponentType.DUO)
-}
-
-/**
- * Opens the shade to relative position to open
- * @param level The desired shade level. 0=closed, 99=open
- */
-def setLevel(level, rate=0) {
-    log.debug "Executing 'setLevel'"
-    return setPosition(Math.round(level), ShadeComponentType.DUO)
+            if (type == ShadeComponentType.SHADE) {
+        return setPosition(Math.round(level), ShadeComponentType.SHADE)
+    } else if (type == ShadeComponentType.DUO) {
+        return setPosition(Math.round(level), ShadeComponentType.DUO)
+    }
 }
 //
 // windowShade commands... vanes don't matter but I kept them 
