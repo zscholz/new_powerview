@@ -120,7 +120,7 @@ def updated() {
 // implement the momentary method
 def push() {
     log.debug("CMD push()")
-    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
+    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId} HTTP/1.1")
 }
 
 def on() {
