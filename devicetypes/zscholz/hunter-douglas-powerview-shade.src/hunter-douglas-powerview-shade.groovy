@@ -38,7 +38,7 @@ metadata {
 
         // device capabilities
         capability "Battery"
-        capability "Light"
+        //capability "Light"
         capability "Polling"
         capability "Refresh"
         capability "Switch"
