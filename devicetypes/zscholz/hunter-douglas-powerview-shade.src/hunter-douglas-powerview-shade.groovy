@@ -407,7 +407,7 @@ def off() {
  */
 def setLevel(level, rate=0) {
     log.debug "Executing 'setLevel'"
-    return setPosition(Math.round((65535/100)*level), ShadeComponentType.SHADE)
+    return setPosition(rawPosition, ShadeComponentType.SHADE)
 }
 
 //
