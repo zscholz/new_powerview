@@ -29,7 +29,7 @@ metadata {
         author: "Zach Scholz"
     ) {
         // tags
-        capability "Actuator"
+//       capability "Actuator"
 
         // device capabilities
 //        capability "Momentary"
@@ -37,12 +37,12 @@ metadata {
     }
 
     tiles(scale: 2) {
-        standardTile("on", "device.windowShade", width: 3, height: 3,
+        standardTile("off", "device.windowShade", width: 3, height: 3,
                     inactiveLabel: false, decoration: "flat") {
             state("default", label:'Activate', action:"push",
-                icon:"st.switches.light.on")
+                icon:"st.switches.light.off")
         }
-        main(["on"])
+        main(["off"])
     }
 }
 
@@ -86,7 +86,7 @@ def sendRequestCallback(response) {
         log.warn("got unexpected response: status=${response.status} body=${response.body}")
     }
     // scenes can only be momentary actuator, so always reset ST state to off
-    sendEvent(name: 'switch', value: 'off')
+    sendEvent(name: 'Switch', value: 'off')
 }
 
 
