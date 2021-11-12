@@ -29,21 +29,21 @@ metadata {
         author: "Zach Scholz"
     ) {
         // tags
-       capability "Actuator"
+//       capability "Actuator"
 
         // device capabilities
         capability "Momentary"
-        capability "Switch"
+//        capability "Switch"
     }
 
-    tiles(scale: 2) {
-        standardTile("off", "device.windowShade", width: 3, height: 3,
-                    inactiveLabel: false, decoration: "flat") {
-            state("default", label:'Activate', action:"push",
-                icon:"st.switches.light.off")
-        }
-        main(["off"])
-    }
+ //   tiles(scale: 2) {
+ //       standardTile("off", "device.windowShade", width: 3, height: 3,
+ //                   inactiveLabel: false, decoration: "flat") {
+ //           state("default", label:'Activate', action:"push",
+ //               icon:"st.switches.light.off")
+ //       }
+ //       main(["off"])
+ //   }
 }
 
 
