@@ -304,7 +304,7 @@ def parseShadeData(payload) {
         // if shade level is reported, then vane is closed
         sendEvent(name: 'windowShade', value: 'closed')
 
-//    } else if (shade.positions.posKind1 == ShadeComponentType.DUO) {
+}    //else if (shade.positions.posKind1 == ShadeComponentType.DUO) {
 //        def duoLevel = (int) shade.positions.position1 / ShadeMaxPosition.DUO * 100
 //        log.debug("Setting shade level: ${shadeLevel}")
 //        sendEvent(name: 'level', value: shadeLevel)
@@ -391,7 +391,7 @@ def on() {
     }// else if (type == ShadeComponentType.DUO) {
     //    return setPosition(100, ShadeComponentType.DUO)
     //}
-//}
+}
 
 /**
  * Fully closes the shade, vanes closed
@@ -404,7 +404,7 @@ def off() {
 //        return setPosition(0, ShadeComponentType.DUO)
 //    }
 //    log.debug "made it"
-//}
+}
 
 /**
  * Opens the shade to relative position to open
@@ -417,7 +417,7 @@ def setLevel(level, rate=0) {
     } //else if (type == ShadeComponentType.DUO) {
 //        return setPosition(Math.round(level), ShadeComponentType.DUO)
 //    }
-//}
+}
 //
 // windowShade commands... vanes don't matter but I kept them 
 //
@@ -425,4 +425,4 @@ def setLevel(level, rate=0) {
 //def jog() {
 //    log.debug "Executing jog()"
 //    return startJog()
-//}
+}
