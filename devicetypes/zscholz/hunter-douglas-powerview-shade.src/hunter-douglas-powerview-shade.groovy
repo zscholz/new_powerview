@@ -53,6 +53,17 @@ metadata {
     simulator {
     }
 
+    /**tiles {
+        standardTile("switchmain", "device.windowShade") { 
+            state "open", label:'${name}', action:"close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closing"
+            state "closed", label:'${name}', action:"open", icon:"st.shades.shade-closed", backgroundColor:"#ffffff", nextState:"opening"
+            state "partially open", label:'Open', action:"close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closing"
+            state "opening", label:'${name}', action:"stop", icon:"st.shades.shade-opening", backgroundColor:"#79b821"
+            state "closing", label:'${name}', action:"stop", icon:"st.shades.shade-closing", backgroundColor:"#ffffff"
+        }
+        main(["switchmain"])
+	}*/
+
     tiles(scale: 2) {
         // define top color status block
         multiAttributeTile(name:"windowShade", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
@@ -64,7 +75,7 @@ metadata {
                 attributeState "closing", label:'Closing', action:"windowShade.open", icon:"st.Home.home9", backgroundColor:"#ffffff", nextState:"opening"
             }
             tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-                attributeState "level", label: "${currentValue}", action:"switch level.setLevel"
+                attributeState "level", label: "${shadeLevel}", action:"switch level.setLevel"
             }
         }
 
@@ -407,7 +418,7 @@ def off() {
  */
 def setLevel(level, rate=0) {
     log.debug "Executing 'setLevel'"
-    return setPosition(rawPosition, ShadeComponentType.SHADE)
+    return setPosition(Math.round(level), ShadeComponentType.SHADE)
 }
 
 //
