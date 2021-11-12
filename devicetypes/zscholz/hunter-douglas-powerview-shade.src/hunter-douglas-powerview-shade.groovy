@@ -53,18 +53,18 @@ metadata {
     simulator {
     }
 
-    /**tiles {
+    tiles {
         standardTile("switchmain", "device.windowShade") { 
-            state "open", label:'${name}', action:"close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closing"
-            state "closed", label:'${name}', action:"open", icon:"st.shades.shade-closed", backgroundColor:"#ffffff", nextState:"opening"
-            state "partially open", label:'Open', action:"close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closing"
-            state "opening", label:'${name}', action:"stop", icon:"st.shades.shade-opening", backgroundColor:"#79b821"
-            state "closing", label:'${name}', action:"stop", icon:"st.shades.shade-closing", backgroundColor:"#ffffff"
+            state "open", label:"Open", action:"windowShade.close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closed"
+            state "closed", label:"Closed", action:"windowShade.open", icon:"st.shades.shade-closed", backgroundColor:"#ffffff", nextState:"open"
+//            state "partially open", label:'Open', action:"windowShade.close", icon:"st.shades.shade-open", backgroundColor:"#79b821", nextState:"closing"
+//            state "opening", label:"Opening", action:"windowShade.close", icon:"st.shades.shade-opening", backgroundColor:"#79b821", nextState:"open"
+//            state "closing", label:"Closing", action:"windowShade.open", icon:"st.shades.shade-closing", backgroundColor:"#ffffff", nextState:"opening"
         }
         main(["switchmain"])
-	}*/
+	}
 
-    tiles(scale: 2) {
+    /**tiles(scale: 2) {
         // define top color status block
         multiAttributeTile(name:"windowShade", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
             tileAttribute ("device.windowShade", key: "PRIMARY_CONTROL") {
@@ -91,12 +91,12 @@ metadata {
             state("default", label:'Open shade', action:"on",
                 icon:"st.doors.garage.garage-opening")
         }
-        /** open vanes
+        // open vanes
         standardTile("on", "device.windowShade", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
             state("default", label:'Open vanes', action:"open",
                 icon:"st.doors.garage.garage-opening")
-        }*/
+        }
         // refresh
         standardTile("refresh", "device.switch", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
@@ -111,12 +111,12 @@ metadata {
             state("default", label:'Close shade', action:"off",
                 icon:"st.doors.garage.garage-closing")
         }
-        /** close vanes
+        // close vanes
         standardTile("off", "device.windowShade", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
             state("default", label:'Close vanes', action:"close",
                 icon:"st.doors.garage.garage-closing")
-        }*/
+        }
         // battery level
         valueTile("battery", "device.battery", width: 2, height: 2, decoration: "flat") {
             state("battery", label:'${currentValue}%\nBattery', defaultState: true, backgroundColors: [
@@ -134,7 +134,7 @@ metadata {
 //        }
 
         main(["windowShade"])
-    }
+    }*/
 }
 
 
