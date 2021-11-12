@@ -45,7 +45,7 @@ metadata {
         capability "Window Shade"
 
         // custom commands
-        command "jog"
+//        command "jog"
 
     }
 
@@ -115,11 +115,11 @@ metadata {
 
         //-- bottom row --
         // jog shade
-        standardTile("jog", "device.windowShade", width: 2, height: 2,
-                    inactiveLabel: false, decoration: "flat") {
-            state("default", label:'Jog shade', action:"jog",
-                icon:"st.motion.motion.inactive")
-        }
+//        standardTile("jog", "device.windowShade", width: 2, height: 2,
+//                    inactiveLabel: false, decoration: "flat") {
+//            state("default", label:'Jog shade', action:"jog",
+//                icon:"st.motion.motion.inactive")
+//        }
 
         main(["windowShade"])
     }
@@ -137,14 +137,14 @@ metadata {
 // set shade open {"shade":{"id":1694,"positions":{"position1":17508,"posKind1":1}}}
 // set shade closed {"shade":{"id":1694,"positions":{"position1":0,"posKind1":1}}}
 @Field def ShadeComponentType = [
-    SHADE: 1, 
-    VANE: 3
+    SHADE: 1//, 
+    //VANE: 3
 ]
 
 // define max (open) setting value
 @Field def ShadeMaxPosition = [
-    SHADE: 65535,
-    VANE: 32767
+    SHADE: 65535//,
+    //VANE: 32767
 ]
 
 /**
@@ -169,9 +169,9 @@ private setPosition(int level, int type) {
     def rawPosition = 0
     if (type == ShadeComponentType.SHADE) {
         rawPosition = level/100 * ShadeMaxPosition.SHADE
-    } else if (type == ShadeComponentType.VANE) {
-        rawPosition = level/100 * ShadeMaxPosition.VANE
-    }
+    } //else if (type == ShadeComponentType.VANE) {
+//        rawPosition = level/100 * ShadeMaxPosition.VANE
+//    }
     rawPosition = (int) rawPosition // round value
     def rawType = type
 
@@ -211,7 +211,7 @@ private forceUpdate(boolean requestBatteryLevel = false) {
  * the shade under control.
  {"shade":{"motion":"jog"}}
  */
-private startJog() {
+/**private startJog() {
     def path = "/api/shades/${state.pvShadeId}"
     def builder = new groovy.json.JsonBuilder()
     builder.shade {
@@ -219,7 +219,7 @@ private startJog() {
     }
     def body = builder.toString()
     return sendRequest('PUT', path, body)
-}
+}*/
 
 /**
  * Returns a HTTP hubAction to be sent from the ST hub to the local PowerView
@@ -303,7 +303,7 @@ def parseShadeData(payload) {
         // if shade level is reported, then vane is closed
         sendEvent(name: 'windowShade', value: 'closed')
 
-    } else if (shade.positions.posKind1 == ShadeComponentType.VANE) {
+    } /**else if (shade.positions.posKind1 == ShadeComponentType.VANE) {
         def vaneLevel = (int) shade.positions.position1 / ShadeMaxPosition.VANE * 100
         log.debug("Setting vane level: ${vaneLevel}")
         def stateName = ''
@@ -318,7 +318,7 @@ def parseShadeData(payload) {
         sendEvent(name: 'switch', value: 'off')
         // if vane level is reported, then shade is closed
         sendEvent(name: 'level', value: 0)
-    }
+    }*/
 
     // parse shade battery level info
     if (shade.batteryStrength) {
@@ -416,32 +416,32 @@ def setLevel(level, rate=0) {
 /**
  * Full opens the vanes. If the shade level position is > 0, the shade will
  * first close before opening the vanes.
- */
+ 
 def open() {
     log.debug "Executing 'open'"
     return setPosition(100, ShadeComponentType.VANE)
-}
+}*/
 
 /**
  * Closes the vanes. If the shade level position is > 0, the shade will
  * close. (vanes are already closed)
- */
+ 
 def close() {
     log.debug "Executing 'close'"
     return setPosition(0, ShadeComponentType.VANE)
-}
+}*/
 
 /**
  * Sets the vanes to the halfway point. If the shade level position is > 0, the shade will
  * first close.
  * TODO: this is hard-coded to 50%. It should really be a preference setting.
- */
+ 
 def presetPosition() {
     log.debug "Executing 'presetPosition'"
     return setPosition(50, ShadeComponentType.VANE)
-}
+}*/
 
-def jog() {
+/**def jog() {
     log.debug "Executing jog()"
     return startJog()
-}
+}*/
