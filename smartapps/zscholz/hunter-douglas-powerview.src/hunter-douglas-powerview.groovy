@@ -62,13 +62,13 @@ def singlePagePref() {
             fetchHubInfo()
             fetchAllShades()
             fetchAllScenes()
-            fetchAllSceneCollections()
+//            fetchAllSceneCollections()
             def foundShades = getDiscoveredShadeList()
             def foundScenes = getDiscoveredSceneList()
-            def foundSceneCollections = getDiscoveredSceneCollectionList()
+//            def foundSceneCollections = getDiscoveredSceneCollectionList()
             def shadeCount = foundShades.size()
             def sceneCount = foundScenes.size()
-            def sceneCollectionCount = foundSceneCollections.size()
+//            def sceneCollectionCount = foundSceneCollections.size()
             log.info("pref.singlePagePref - shadeCount=$shadeCount, sceneCount=$sceneCount, sceneCollectionCount=$sceneCollectionCount")
 
             section("Shades") {
@@ -101,7 +101,7 @@ def singlePagePref() {
                 }
             }
 
-            section("Scene Collections") {
+/**            section("Scene Collections") {
                 if (sceneCollectionCount > 0) {
                     input(
                         name: "selectedSceneCollections", 
@@ -115,7 +115,7 @@ def singlePagePref() {
                     paragraph "Searching for installed scene collections..."
                 }
             }
-		}
+		}*/
     }
 }
 
@@ -328,7 +328,7 @@ def fetchAllSceneCollections() {
 
 /**
  * Handles response for scene configs
- */
+ 
 def _fetchAllSceneCollectionsCallback(response) {
     state.discoveredSceneCollections = [:]
 
@@ -356,25 +356,25 @@ def _fetchAllSceneCollectionsCallback(response) {
 	log.info "_fetchAllSceneCollectionsCallback(status=${response.status}) scenes=${state.discoveredSceneCollections.keySet()}"
     return state.discoveredSceneCollections
 }
-
+*/
 /**
  * Returns a flat list of scene names that can be rendered by a list control
  */
-def getDiscoveredSceneCollectionList() {
+/**def getDiscoveredSceneCollectionList() {
     def ret = []
     state.discoveredSceneCollections?.each { key, value ->
         ret.add(value.enumLabel)
     }
     return ret
 }
-
+*/
 /**
  * Returns the device ID associated with an enumLabel
  */
-def sceneCollectionEnumToId(enumLabel) {
+/**def sceneCollectionEnumToId(enumLabel) {
     return state.discoveredSceneCollections[enumLabel]?.deviceNetworkId
 }
-
+*/
 // ----------------------------------------------------------------------------
 // device handler methods
 // ----------------------------------------------------------------------------
@@ -513,7 +513,7 @@ def removeAddedScenes() {
 /**
  * Install the scene collections that the user selected in the config
  */
-def installSelectedSceneCollections() {
+/**def installSelectedSceneCollections() {
     log.info("installSelectedSceneCollections() selectedSceneCollections=${settings.selectedSceneCollections}")
 
     // remove the scene collections that are installed but are not checked by the user
@@ -533,11 +533,11 @@ def installSelectedSceneCollections() {
         installSceneCollection(it)
     }
 }
-
+*/
 /**
  * Installs an individual scene collection device handler
  */
-def installSceneCollection(enumLabel) {
+/**def installSceneCollection(enumLabel) {
     // get scene info already fetched
     def sceneCollectionInfo = state.discoveredSceneCollections.get(enumLabel)
     if (!sceneCollectionInfo) {
@@ -580,7 +580,7 @@ def removeAddedSceneCollections() {
     }
     state.addedSceneCollectionIds = []
 }
-
+*/
 // ----------------------------------------------------------------------------
 // HTTP methods
 // ----------------------------------------------------------------------------
@@ -628,7 +628,7 @@ def updated() {
     log.info "CMD updated"
     installSelectedShades()
     installSelectedScenes()
-    installSelectedSceneCollections()
+    //installSelectedSceneCollections()
 }
 
 /**
