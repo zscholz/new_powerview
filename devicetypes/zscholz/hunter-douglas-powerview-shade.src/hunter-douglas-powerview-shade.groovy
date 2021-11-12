@@ -43,7 +43,7 @@ metadata {
         capability "Refresh"
         capability "Switch"
         capability "Switch Level"
-        capability "Window Shade"
+        //capability "Window Shade"
 
         // custom commands
 //        command "jog"
