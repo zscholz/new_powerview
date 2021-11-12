@@ -32,7 +32,7 @@ metadata {
         capability "Actuator"
 
         // device capabilities
-        capability "Momentary"
+//        capability "Momentary"
         capability "Switch"
     }
 
@@ -120,7 +120,8 @@ def updated() {
 // implement the momentary method
 def push() {
     log.debug("CMD push()")
-    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId} HTTP/1.1")
+    log.debug("${state.pvSceneId}")
+    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
 }
 
 def on() {
