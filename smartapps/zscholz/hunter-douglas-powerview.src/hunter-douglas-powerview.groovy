@@ -114,8 +114,8 @@ def singlePagePref() {
                 } else {
                     paragraph "Searching for installed scene collections..."
                 }
-            }
-		}*/
+            }*/
+		}
     }
 }
 
@@ -156,7 +156,7 @@ def getDeviceId(deviceType, pvId) {
     switch (deviceType) {
         case 'shade':
         case 'scene':
-        case 'scenecollection':
+ //       case 'scenecollection':
             // valid
             break
         default:
@@ -322,10 +322,10 @@ def sceneEnumToId(enumLabel) {
 /**
  * Fetches all managed scene configs
  */
-def fetchAllSceneCollections() {
+/**def fetchAllSceneCollections() {
     return sendRequest('GET', '/api/scenecollections', null, _fetchAllSceneCollectionsCallback)
 }
-
+*/
 /**
  * Handles response for scene configs
  
