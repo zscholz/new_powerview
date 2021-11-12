@@ -131,5 +131,6 @@ def on() {
 
 def off() {
     log.debug("CMD off()")
+    log.debug("${state.pvSceneId}")
     // pass
 }
