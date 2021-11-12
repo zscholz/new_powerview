@@ -131,6 +131,6 @@ def on() {
 
 def off() {
     log.debug("CMD off()")
-    log.debug("${state.pvSceneId}")
+    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
     // pass
 }
