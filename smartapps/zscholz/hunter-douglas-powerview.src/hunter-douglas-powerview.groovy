@@ -69,7 +69,7 @@ def singlePagePref() {
             def shadeCount = foundShades.size()
             def sceneCount = foundScenes.size()
 //            def sceneCollectionCount = foundSceneCollections.size()
-            log.info("pref.singlePagePref - shadeCount=$shadeCount, sceneCount=$sceneCount, sceneCollectionCount=$sceneCollectionCount")
+            log.info("pref.singlePagePref - shadeCount=$shadeCount, sceneCount=$sceneCount")
 
             section("Shades") {
                 if (shadeCount > 0) {
