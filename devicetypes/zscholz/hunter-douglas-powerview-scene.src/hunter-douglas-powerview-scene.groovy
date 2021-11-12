@@ -29,10 +29,10 @@ metadata {
         author: "Zach Scholz"
     ) {
         // tags
-//       capability "Actuator"
+       capability "Actuator"
 
         // device capabilities
-//        capability "Momentary"
+        capability "Momentary"
         capability "Switch"
     }
 
