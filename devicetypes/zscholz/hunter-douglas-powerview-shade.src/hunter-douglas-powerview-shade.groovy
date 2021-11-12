@@ -79,12 +79,12 @@ metadata {
             state("default", label:'Open shade', action:"on",
                 icon:"st.doors.garage.garage-opening")
         }
-        // open vanes
+        /** open vanes
         standardTile("on", "device.windowShade", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
             state("default", label:'Open vanes', action:"open",
                 icon:"st.doors.garage.garage-opening")
-        }
+        }*/
         // refresh
         standardTile("refresh", "device.switch", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
@@ -99,12 +99,12 @@ metadata {
             state("default", label:'Close shade', action:"off",
                 icon:"st.doors.garage.garage-closing")
         }
-        // close vanes
+        /** close vanes
         standardTile("off", "device.windowShade", width: 2, height: 2,
                     inactiveLabel: false, decoration: "flat") {
             state("default", label:'Close vanes', action:"close",
                 icon:"st.doors.garage.garage-closing")
-        }
+        }*/
         // battery level
         valueTile("battery", "device.battery", width: 2, height: 2, decoration: "flat") {
             state("battery", label:'${currentValue}%\nBattery', defaultState: true, backgroundColors: [
@@ -406,7 +406,7 @@ def off() {
  */
 def setLevel(level, rate=0) {
     log.debug "Executing 'setLevel'"
-    return setPosition(Math.round(level), ShadeComponentType.SHADE)
+    return setPosition(Math.round((65535/100)*level), ShadeComponentType.SHADE)
 }
 
 //
