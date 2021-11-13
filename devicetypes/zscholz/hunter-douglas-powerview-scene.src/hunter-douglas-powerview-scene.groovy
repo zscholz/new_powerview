@@ -34,6 +34,7 @@ metadata {
         // device capabilities
         capability "Momentary"
 //        capability "Switch"
+        capability "Window Shade"
     }
 
  //   tiles(scale: 2) {
@@ -120,7 +121,7 @@ def updated() {
 // implement the momentary method
 def push() {
     log.debug("CMD push()")
-    log.debug("${state.pvSceneId}")
+ //   log.debug("${state.pvSceneId}")
     sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
 }
 
@@ -131,6 +132,6 @@ def on() {
 
 def off() {
     log.debug("CMD off()")
-    sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
+    //sendRequest("GET", "/api/scenes?sceneId=${state.pvSceneId}")
     // pass
 }
